@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:12
@@ -13,11 +11,39 @@ services:
   redis:
     image: redis:latest
 
+  airflow-init:
+    image: apache/airflow:2.7.1
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - airflow.env
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./requirements.txt:/opt/airflow/requirements.txt
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+          pip install -r /opt/airflow/requirements.txt
+          airflow db init
+          airflow users create \
+            --username admin \
+            --firstname admin \
+            --lastname admin \
+            --role Admin \
+            --email admin@example.com \
+            --password admin
+    restart: "no"
+
   airflow-webserver:
     image: apache/airflow:2.7.1
     depends_on:
       - postgres
       - redis
+      - airflow-init
     env_file:
       - airflow.env
     volumes:
@@ -40,6 +66,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - airflow-init
     env_file:
       - airflow.env
     volumes:
@@ -60,6 +87,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - airflow-init
     env_file:
       - airflow.env
     volumes:
@@ -74,29 +102,6 @@ services:
     command: >
       bash -c "pip install -r /opt/airflow/requirements.txt &&
                exec airflow celery worker"
-
-  airflow-init:
-    image: apache/airflow:2.7.1
-    depends_on:
-      - postgres
-      - redis
-    env_file:
-      - airflow.env
-    volumes:
-      - ./requirements.txt:/opt/airflow/requirements.txt
-    entrypoint: /bin/bash
-    command: -c "
-      pip install -r /opt/airflow/requirements.txt &&
-      airflow db init &&
-      airflow users create
-        --username admin
-        --firstname admin
-        --lastname admin
-        --role Admin
-        --email admin@example.com
-        --password admin
-    "
-    restart: "no"
 
 volumes:
   postgres-db-volume:
