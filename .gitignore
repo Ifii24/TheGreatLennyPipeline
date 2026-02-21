@@ -8,3 +8,7 @@ __pycache__/
 airflow.env
 .env
 *.env
+
+# ignore logs
+logs/
+*.log
