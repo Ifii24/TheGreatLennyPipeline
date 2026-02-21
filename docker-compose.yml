@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   postgres:
     image: postgres:12
@@ -31,7 +33,7 @@ services:
       - "8080:8080"
     command: >
       bash -c "pip install -r /opt/airflow/requirements.txt &&
-               airflow webserver"
+               exec airflow webserver"
 
   airflow-scheduler:
     image: apache/airflow:2.7.1
@@ -51,7 +53,7 @@ services:
       - ./requirements.txt:/opt/airflow/requirements.txt
     command: >
       bash -c "pip install -r /opt/airflow/requirements.txt &&
-               airflow scheduler"
+               exec airflow scheduler"
 
   airflow-worker:
     image: apache/airflow:2.7.1
@@ -71,7 +73,7 @@ services:
       - ./requirements.txt:/opt/airflow/requirements.txt
     command: >
       bash -c "pip install -r /opt/airflow/requirements.txt &&
-               airflow celery worker"
+               exec airflow celery worker"
 
   airflow-init:
     image: apache/airflow:2.7.1
@@ -81,20 +83,19 @@ services:
     env_file:
       - airflow.env
     volumes:
-      - ./dags:/opt/airflow/dags
-      - ./logs:/opt/airflow/logs
-      - ./plugins:/opt/airflow/plugins
       - ./requirements.txt:/opt/airflow/requirements.txt
-    command: >
-      bash -c "pip install -r /opt/airflow/requirements.txt &&
-               airflow db init &&
-               airflow users create
-               --username admin
-               --firstname admin
-               --lastname admin
-               --role Admin
-               --email admin@example.com
-               --password admin"
+    entrypoint: /bin/bash
+    command: -c "
+      pip install -r /opt/airflow/requirements.txt &&
+      airflow db init &&
+      airflow users create
+        --username admin
+        --firstname admin
+        --lastname admin
+        --role Admin
+        --email admin@example.com
+        --password admin
+    "
     restart: "no"
 
 volumes:
