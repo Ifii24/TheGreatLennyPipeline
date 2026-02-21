@@ -3,3 +3,8 @@ __pycache__/
 .env
 *.pyc
 .DS_Store
+
+# ignore local secrets
+airflow.env
+.env
+*.env
